@@ -4,18 +4,21 @@ import kotlin.time.measureTime
 @OptIn(ExperimentalTime::class)
 abstract class CompareKotlinCompileTask : DefaultTask() {
 
-    private val codeRepeats = 4000
-    private val warmUpRepeats = 4
-    private val measureRepeats = 10
+    private val codeRepeats = 100
+    private val warmUpRepeats = 2
+    private val measureRepeats = 5
 
     @org.gradle.api.tasks.TaskAction
     fun doAction() {
-        project.exec {
-            val stdout = commandLine("kotlinc", "-version").standardOutput.writer().use { it.toString() }
-            println("Kotlin compiler version: $stdout")
-        }
-        compile("implicit") { "val a$it = mutableListOf<Int>()" }
-        compile("explicit") { "val a$it: MutableList<Int> = mutableListOf()" }
+        project.exec { commandLine("kotlinc", "-version") }
+        compile(
+            name = "implicit",
+            transform = { "val a$it = listOf(1, 2).map { it * 2.0 }.reduce(Double::plus)" },
+        )
+        compile(
+            name = "explicit",
+            transform = { "val a$it = listOf<Int>(1, 2).map<Int, Double> { it * 2.0 }.reduce<Double, Double>(Double::plus)" },
+        )
     }
 
     private fun compile(
@@ -92,6 +95,4 @@ abstract class CompareKotlinCompileTask : DefaultTask() {
     }
 }
 
-tasks.register<CompareKotlinCompileTask>("compareKotlinCompile") {
-
-}
+tasks.register<CompareKotlinCompileTask>("compareKotlinCompile")
